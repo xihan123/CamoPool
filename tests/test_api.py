@@ -118,6 +118,18 @@ class ApiTests(unittest.TestCase):
         with patch.dict("os.environ", {"CAMOPOOL_WS_PATH_PREFIX": "/ws/"}, clear=True):
             self.assertEqual(Settings.from_env().ws_path_prefix, "/ws")
 
+    def test_empty_public_ws_port_omits_port_from_endpoint(self):
+        with patch.dict("os.environ", {"CAMOPOOL_PUBLIC_WS_PORT": ""}, clear=True):
+            configured = Settings.from_env()
+        object.__setattr__(configured, "public_host", "camopool.xihan.website")
+        object.__setattr__(configured, "ws_path_prefix", "/ws")
+        pool = BrowserServerPool(configured)
+        slot = ServerSlot(index=0, port=53400, endpoint="ws://127.0.0.1:53400/secret-path")
+        self.assertEqual(
+            pool._public_endpoint(slot),
+            "ws://camopool.xihan.website/ws/secret-path",
+        )
+
     def test_ws_path_prefix_is_removed_before_upstream_lookup(self):
         configured = settings()
         object.__setattr__(configured, "ws_path_prefix", "/ws")

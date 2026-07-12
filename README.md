@@ -145,7 +145,7 @@ finally:
 | `CAMOPOOL_WARM_POOL_SIZE` | `0` | 空闲时保留的热 BrowserServer 数 |
 | `CAMOPOOL_PUBLIC_HOST` | `localhost` | 返回给客户端的 WS 主机名或 IP |
 | `CAMOPOOL_PUBLIC_SCHEME` | `ws` | 公网 WebSocket 协议：`ws` 或 `wss` |
-| `CAMOPOOL_PUBLIC_WS_PORT` | `53333` | 返回给客户端的公网 WS 端口 |
+| `CAMOPOOL_PUBLIC_WS_PORT` | `53333` | 返回给客户端的公网 WS 端口；留空则省略端口 |
 | `CAMOPOOL_WS_PATH_PREFIX` | 空 | WebSocket 路径前缀，例如 `/ws` |
 | `CAMOPOOL_ACQUIRE_TIMEOUT_MS` | `10000` | 满池时等待租约的时间 |
 | `CAMOPOOL_LAUNCH_TIMEOUT_MS` | `30000` | BrowserServer 启动超时 |
@@ -168,7 +168,7 @@ TLS 应由 Nginx、Caddy 或其他反向代理终止，并将 WebSocket 转发�
 - 两组 upstream 使用相同的 `ip_hash` 或一致性哈希规则。
 - 所有节点使用相同的 `CAMOPOOL_API_KEY`、`CAMOPOOL_PUBLIC_HOST`、`CAMOPOOL_PUBLIC_SCHEME`、`CAMOPOOL_PUBLIC_WS_PORT` 和 `CAMOPOOL_WS_PATH_PREFIX`。
 - 每个节点设置唯一的 `CAMOPOOL_INSTANCE_ID`。
-- 使用 TLS 时设置 `CAMOPOOL_PUBLIC_SCHEME=wss`，并将 `CAMOPOOL_PUBLIC_WS_PORT` 设为公网端口，例如 `443`。
+- 使用 TLS 时设置 `CAMOPOOL_PUBLIC_SCHEME=wss`；反向代理使用标准端口时将 `CAMOPOOL_PUBLIC_WS_PORT` 留空。
 - 若代理前还有 CDN，需要恢复真实客户端 IP，避免亲和规则基于 CDN 节点地址。
 
 节点故障时已有租约不能迁移，客户端需要重新申请。

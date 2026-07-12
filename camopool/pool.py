@@ -283,9 +283,10 @@ class BrowserServerPool:
         parsed = urlsplit(slot.endpoint)
         return parsed._replace(
             scheme=self.settings.public_scheme,
-            netloc="%s:%s" % (
-                self.settings.public_host,
-                self.settings.public_ws_port,
+            netloc=(
+                "%s:%s" % (self.settings.public_host, self.settings.public_ws_port)
+                if self.settings.public_ws_port
+                else self.settings.public_host
             ),
             path=self.settings.ws_path_prefix + parsed.path,
             query="",
