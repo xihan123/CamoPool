@@ -1,0 +1,15 @@
+services:
+  camopool:
+    image: ghcr.io/xihan123/camopool:latest
+    init: true
+    restart: unless-stopped
+    shm_size: 2gb
+    ports:
+      - "8000:8000"
+      - "53333:53333"
+    env_file:
+      - .env
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
