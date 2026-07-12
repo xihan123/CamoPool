@@ -287,20 +287,13 @@ class BrowserServerPool:
                 self.settings.public_host,
                 self.settings.public_ws_port,
             ),
+            path=self.settings.ws_path_prefix + parsed.path,
             query="",
             fragment="",
         ).geturl()
 
     async def _proxy_websocket(self, client: ServerConnection) -> None:
-        path = client.request.path
-        upstream_endpoint = next(
-            (
-                slot.endpoint
-                for slot in self.slots
-                if slot.endpoint and urlsplit(slot.endpoint).path == path
-            ),
-            None,
-        )
+        upstream_endpoint = self._upstream_endpoint(client.request.path)
         if not upstream_endpoint:
             await client.close(code=1008, reason="unknown browser endpoint")
             return
@@ -323,6 +316,21 @@ class BrowserServerPool:
             for task in pending:
                 task.cancel()
             await asyncio.gather(*done, *pending, return_exceptions=True)
+
+    def _upstream_endpoint(self, path: str) -> Optional[str]:
+        prefix = self.settings.ws_path_prefix
+        if prefix:
+            if not path.startswith(prefix + "/"):
+                return None
+            path = path[len(prefix):]
+        return next(
+            (
+                slot.endpoint
+                for slot in self.slots
+                if slot.endpoint and urlsplit(slot.endpoint).path == path
+            ),
+            None,
+        )
 
     def _lease(self, slot: ServerSlot) -> Lease:
         assert slot.lease_id and slot.expires_at

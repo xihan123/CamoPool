@@ -5,7 +5,7 @@ CamoPool HTTP API 只管理 Camoufox BrowserServer 租约。页面操作通过 P
 ## 基本信息
 
 - HTTP API：`http://localhost:8000`
-- WebSocket 入口：`ws://localhost:53333`，所有池槽共用
+- WebSocket 入口：`ws://localhost:53333`，可通过 `CAMOPOOL_WS_PATH_PREFIX=/ws` 配置为 `ws://localhost:53333/ws/...`
 - 服务端 Playwright：`1.61.0`
 - Camoufox Python：每次 CI 构建从官方仓库 `main` 分支解析最新提交
 - Camoufox Browser：默认 `jwriter20/150.0.2-beta.25`

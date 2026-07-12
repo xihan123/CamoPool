@@ -26,6 +26,7 @@ def settings():
         ws_host="0.0.0.0",
         ws_port=53333,
         public_ws_port=443,
+        ws_path_prefix="",
         acquire_timeout_ms=1000,
         launch_timeout_ms=30000,
         lease_ttl_seconds=300,
@@ -102,6 +103,31 @@ class ApiTests(unittest.TestCase):
             pool._public_endpoint(slot),
             "wss://browser.example.com:443/secret-path",
         )
+
+    def test_public_endpoint_adds_configured_ws_path_prefix(self):
+        configured = settings()
+        object.__setattr__(configured, "ws_path_prefix", "/ws")
+        pool = BrowserServerPool(configured)
+        slot = ServerSlot(index=0, port=53400, endpoint="ws://127.0.0.1:53400/secret-path")
+        self.assertEqual(
+            pool._public_endpoint(slot),
+            "wss://browser.example.com:443/ws/secret-path",
+        )
+
+    def test_settings_normalizes_ws_path_prefix(self):
+        with patch.dict("os.environ", {"CAMOPOOL_WS_PATH_PREFIX": "/ws/"}, clear=True):
+            self.assertEqual(Settings.from_env().ws_path_prefix, "/ws")
+
+    def test_ws_path_prefix_is_removed_before_upstream_lookup(self):
+        configured = settings()
+        object.__setattr__(configured, "ws_path_prefix", "/ws")
+        pool = BrowserServerPool(configured)
+        pool.slots[0].endpoint = "ws://127.0.0.1:53400/secret-path"
+        self.assertEqual(
+            pool._upstream_endpoint("/ws/secret-path"),
+            pool.slots[0].endpoint,
+        )
+        self.assertIsNone(pool._upstream_endpoint("/secret-path"))
 
 
 class PoolTests(unittest.IsolatedAsyncioTestCase):

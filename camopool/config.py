@@ -27,6 +27,7 @@ class Settings:
     ws_host: str
     ws_port: int
     public_ws_port: int
+    ws_path_prefix: str
     acquire_timeout_ms: int
     launch_timeout_ms: int
     lease_ttl_seconds: int
@@ -78,6 +79,9 @@ class Settings:
         public_scheme = os.getenv("CAMOPOOL_PUBLIC_SCHEME", "ws").strip().lower()
         if public_scheme not in {"ws", "wss"}:
             raise ValueError("CAMOPOOL_PUBLIC_SCHEME must be ws or wss")
+        ws_path_prefix = os.getenv("CAMOPOOL_WS_PATH_PREFIX", "").strip().rstrip("/")
+        if ws_path_prefix and not ws_path_prefix.startswith("/"):
+            raise ValueError("CAMOPOOL_WS_PATH_PREFIX must start with /")
         return cls(
             pool_size=pool_size,
             warm_pool_size=warm_pool_size,
@@ -88,6 +92,7 @@ class Settings:
             ws_host=os.getenv("CAMOPOOL_WS_HOST", "0.0.0.0"),
             ws_port=ws_port,
             public_ws_port=_int("CAMOPOOL_PUBLIC_WS_PORT", ws_port, 1),
+            ws_path_prefix=ws_path_prefix,
             acquire_timeout_ms=_int("CAMOPOOL_ACQUIRE_TIMEOUT_MS", 10_000),
             launch_timeout_ms=_int("CAMOPOOL_LAUNCH_TIMEOUT_MS", 30_000),
             lease_ttl_seconds=_int("CAMOPOOL_LEASE_TTL_SECONDS", 300),
