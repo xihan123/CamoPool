@@ -6,7 +6,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PATH="/app/.venv/bin:$PATH" \
     CAMOPOOL_HEADLESS=true \
     CAMOPOOL_BROWSER_OS=linux \
-    CAMOPOOL_CAMOUFOX_BROWSER=jwriter20/150.0.2-beta.25 \
+    CAMOPOOL_CAMOUFOX_BROWSER=official/152.0.4-beta.26 \
     CAMOPOOL_WORKER_HOST=127.0.0.1
 
 WORKDIR /app
@@ -31,7 +31,8 @@ RUN uv sync -v --frozen --no-dev --no-editable
 
 USER camopool
 RUN camoufox sync \
-    && camoufox fetch "$CAMOPOOL_CAMOUFOX_BROWSER"
+    && printf 'y\n' | camoufox fetch "$CAMOPOOL_CAMOUFOX_BROWSER" \
+    && python -c "from camoufox.pkgman import installed_verstr; print(installed_verstr())"
 
 EXPOSE 8000 53333
 

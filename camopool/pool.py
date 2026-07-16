@@ -182,7 +182,7 @@ class BrowserServerPool:
             version_data["build"],
         )
         command = [node]
-        if int(version_data["version"].split(".", 1)[0]) < 152:
+        if int(version_data["version"].split(".", 1)[0]) < 153:
             command.extend(["-r", str(compat_hook)])
         command.extend([
             cli,
