@@ -194,6 +194,33 @@ class PoolTests(unittest.IsolatedAsyncioTestCase):
             self.assertTrue(all(slot.lease_id is None for slot in pool.slots))
             await pool.stop()
 
+    async def test_reaper_skips_a_lease_renewed_after_expiry_scan(self):
+        pool = BrowserServerPool(settings())
+        slot = pool.slots[0]
+        slot.lease_id = "lease"
+        slot.expires_at = datetime.now(timezone.utc) - timedelta(seconds=1)
+        pool.leases["lease"] = slot
+        pool._terminate = AsyncMock()
+        pool.started = True
+
+        async def renew_before_release(*coroutines, **_kwargs):
+            slot.expires_at = datetime.now(timezone.utc) + timedelta(minutes=1)
+            try:
+                return [await coroutine for coroutine in coroutines]
+            finally:
+                pool.started = False
+
+        with (
+            patch("camopool.pool.asyncio.sleep", AsyncMock()),
+            patch("camopool.pool.asyncio.gather", renew_before_release),
+        ):
+            await pool._reap_expired()
+
+        self.assertIs(pool.leases.get("lease"), slot)
+        self.assertEqual(slot.lease_id, "lease")
+        pool._terminate.assert_not_awaited()
+        self.assertEqual(pool.available.qsize(), 0)
+
     async def test_release_stops_slot_when_warm_floor_is_satisfied(self):
         pool = BrowserServerPool(settings())
         slot = pool.slots[0]

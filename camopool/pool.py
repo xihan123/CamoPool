@@ -381,10 +381,18 @@ class BrowserServerPool:
         slot.expires_at = datetime.now(timezone.utc) + timedelta(seconds=self.settings.lease_ttl_seconds)
         return self._lease(slot)
 
-    async def release(self, lease_id: str) -> None:
-        slot = self.leases.pop(lease_id, None)
+    async def release(
+        self,
+        lease_id: str,
+        *,
+        expected_expires_at: Optional[datetime] = None,
+    ) -> None:
+        slot = self.leases.get(lease_id)
         if not slot or slot.lease_id != lease_id:
             raise LeaseNotFound(lease_id)
+        if expected_expires_at is not None and slot.expires_at != expected_expires_at:
+            return
+        self.leases.pop(lease_id)
         slot.lease_id = None
         slot.expires_at = None
         try:
@@ -404,12 +412,21 @@ class BrowserServerPool:
             await asyncio.sleep(1)
             now = datetime.now(timezone.utc)
             expired = [
-                lease_id
+                (lease_id, slot.expires_at)
                 for lease_id, slot in self.leases.items()
                 if slot.expires_at and slot.expires_at <= now
             ]
             if expired:
-                await asyncio.gather(*(self.release(lease_id) for lease_id in expired), return_exceptions=True)
+                await asyncio.gather(
+                    *(
+                        self.release(
+                            lease_id,
+                            expected_expires_at=expires_at,
+                        )
+                        for lease_id, expires_at in expired
+                    ),
+                    return_exceptions=True,
+                )
 
     def stats(self) -> Dict[str, Any]:
         connected = sum(
